@@ -1,0 +1,1752 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>DASTRUC – Week 4 Mock Exam: Sorting Algorithms</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+/* ─── ROOT TOKENS ─────────────────────────────────────────────────────────── */
+:root {
+  --ink:      #0e0f1a;
+  --ink-2:    #3d3f52;
+  --ink-3:    #8b8d9e;
+  --surface:  #f6f7fb;
+  --card:     #ffffff;
+  --border:   #e4e6f0;
+  --primary:  #4338ca;
+  --primary-h:#3730a3;
+  --primary-l:#eef2ff;
+  --primary-b:#c7d2fe;
+  --ok:       #059669;
+  --ok-l:     #d1fae5;
+  --ok-b:     #a7f3d0;
+  --err:      #dc2626;
+  --err-l:    #fee2e2;
+  --err-b:    #fca5a5;
+  --warn:     #d97706;
+  --warn-l:   #fef3c7;
+  --warn-b:   #fde68a;
+  --flag:     #f59e0b;
+  --partial:  #7c3aed;
+  --partial-l:#ede9fe;
+  --r-sm:     6px;
+  --r:        12px;
+  --r-lg:     18px;
+  --sh:       0 1px 4px rgba(14,15,26,.06), 0 4px 16px rgba(14,15,26,.08);
+  --sh-lg:    0 4px 24px rgba(14,15,26,.12), 0 1px 4px rgba(14,15,26,.06);
+}
+
+/* ─── RESET ───────────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body { font-family: 'DM Sans', sans-serif; background: var(--surface); color: var(--ink); min-height: 100vh; line-height: 1.6; }
+button, input { font-family: inherit; }
+input[type=text] { -webkit-appearance: none; appearance: none; }
+
+/* ─── CREDIT BAR ──────────────────────────────────────────────────────────── */
+#credit-bar {
+  background: var(--ink);
+  color: #9ca3af;
+  padding: 7px 20px;
+  font-size: 11.5px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  letter-spacing: .01em;
+}
+#credit-bar .left { display: flex; flex-wrap: wrap; gap: 12px; }
+#credit-bar span strong { color: #e5e7eb; }
+#credit-bar a { color: #818cf8; text-decoration: none; }
+#credit-bar a:hover { color: #a5b4fc; text-decoration: underline; }
+
+/* ─── HEADER ──────────────────────────────────────────────────────────────── */
+#exam-header {
+  background: linear-gradient(135deg, #1e1b4b 0%, #312e81 60%, #4338ca 100%);
+  color: white;
+  padding: 28px 24px 24px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+#exam-header::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: repeating-linear-gradient(45deg, transparent, transparent 30px, rgba(255,255,255,.02) 30px, rgba(255,255,255,.02) 31px);
+  pointer-events: none;
+}
+#exam-header h1 {
+  font-family: 'Syne', sans-serif;
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -.3px;
+  position: relative;
+}
+#exam-header p { font-size: 12.5px; opacity: .75; margin-top: 5px; position: relative; }
+
+/* ─── STICKY TIMER BAR ────────────────────────────────────────────────────── */
+#timer-bar {
+  background: var(--card);
+  border-bottom: 1px solid var(--border);
+  padding: 10px 20px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  position: sticky;
+  top: 0;
+  z-index: 200;
+  box-shadow: 0 2px 8px rgba(14,15,26,.06);
+}
+#timer-display {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--primary);
+  min-width: 70px;
+  transition: color .3s;
+}
+#timer-display.warn  { color: var(--warn); }
+#timer-display.danger { color: var(--err); animation: blink 1s infinite; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.4} }
+.progress-track { flex: 1; height: 7px; background: var(--border); border-radius: 99px; overflow: hidden; }
+.progress-fill  { height: 100%; background: linear-gradient(90deg, var(--primary), #818cf8); border-radius: 99px; transition: width .4s; width: 0%; }
+#answered-label { font-size: 12.5px; color: var(--ink-3); white-space: nowrap; }
+
+/* ─── LAYOUT ──────────────────────────────────────────────────────────────── */
+#exam-body { display: flex; gap: 20px; max-width: 1180px; margin: 0 auto; padding: 20px; align-items: flex-start; }
+#questions-col { flex: 1; min-width: 0; }
+#sidebar { width: 250px; flex-shrink: 0; }
+
+/* ─── CONTROLS / FILTER BAR ───────────────────────────────────────────────── */
+.ctrl-row  { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; align-items: center; }
+.btn {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 7px 14px; border-radius: var(--r-sm); border: none;
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  transition: background .15s, transform .1s, opacity .15s;
+}
+.btn:active { transform: scale(.97); }
+.btn:disabled { opacity:.5; cursor:default; pointer-events:none; }
+.btn-primary { background: var(--primary); color: white; }
+.btn-primary:hover { background: var(--primary-h); }
+.btn-ok     { background: var(--ok); color: white; }
+.btn-ok:hover { background: #047857; }
+.btn-ghost  { background: white; color: var(--ink-2); border: 1px solid var(--border); }
+.btn-ghost:hover { background: var(--surface); }
+
+.filter-row { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
+.f-btn {
+  padding: 5px 13px; border-radius: 99px; border: 1.5px solid var(--border);
+  background: white; font-size: 12px; font-weight: 500; cursor: pointer;
+  color: var(--ink-3); transition: all .15s;
+}
+.f-btn:hover  { border-color: var(--primary-b); color: var(--primary); }
+.f-btn.active { background: var(--primary); border-color: var(--primary); color: white; }
+
+/* ─── NAVIGATOR ───────────────────────────────────────────────────────────── */
+#navigator {
+  background: var(--card);
+  border-radius: var(--r);
+  padding: 14px;
+  box-shadow: var(--sh);
+  position: sticky;
+  top: 64px;
+}
+#navigator h3 {
+  font-family: 'Syne', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .8px;
+  color: var(--ink-3);
+  margin-bottom: 10px;
+}
+#nav-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; }
+.nav-btn {
+  aspect-ratio: 1;
+  border: none;
+  border-radius: 5px;
+  font-size: 10.5px;
+  font-weight: 600;
+  cursor: pointer;
+  background: var(--surface);
+  color: var(--ink-3);
+  transition: all .15s;
+}
+.nav-btn:hover                  { background: var(--primary-l); color: var(--primary); }
+.nav-btn.answered               { background: var(--primary-b); color: var(--primary); }
+.nav-btn.nav-flagged            { background: var(--warn-b); color: var(--warn); }
+.nav-btn.nav-correct            { background: var(--ok-b); color: var(--ok); }
+.nav-btn.nav-incorrect          { background: var(--err-b); color: var(--err); }
+
+/* ─── TYPE GROUP HEADER ───────────────────────────────────────────────────── */
+.type-header {
+  font-family: 'Syne', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .6px;
+  color: white;
+  background: linear-gradient(90deg, var(--primary), #6366f1);
+  border-radius: var(--r-sm);
+  padding: 9px 14px;
+  margin: 8px 0 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ─── QUESTION CARD ───────────────────────────────────────────────────────── */
+.q-card {
+  background: var(--card);
+  border-radius: var(--r);
+  padding: 18px;
+  margin-bottom: 14px;
+  box-shadow: var(--sh);
+  border: 2px solid transparent;
+  transition: border-color .2s;
+}
+.q-card.flagged-card   { border-color: var(--flag); }
+.q-card.correct-card   { border-color: var(--ok); }
+.q-card.incorrect-card { border-color: var(--err); }
+.q-card.partial-card   { border-color: var(--partial); }
+
+.q-top {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  gap: 8px; margin-bottom: 10px;
+}
+.q-chips { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+
+.chip {
+  display: inline-block; padding: 2px 8px; border-radius: 99px;
+  font-size: 10.5px; font-weight: 600; letter-spacing: .02em;
+}
+.chip-num       { background: var(--primary-l); color: var(--primary); }
+.chip-mc        { background: #ede9fe; color: #5b21b6; }
+.chip-tf        { background: var(--warn-l); color: #92400e; }
+.chip-enum      { background: var(--ok-l); color: #065f46; }
+.chip-id        { background: var(--primary-l); color: var(--primary); }
+.chip-acronym   { background: #fce7f3; color: #9d174d; }
+.chip-easy      { background: #dcfce7; color: #15803d; }
+.chip-medium    { background: var(--warn-l); color: #92400e; }
+.chip-hard      { background: var(--err-l); color: #991b1b; }
+.chip-ref       { background: var(--surface); color: var(--ink-3); border: 1px solid var(--border); font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0; }
+
+.flag-btn {
+  background: none; border: 1.5px solid var(--border); border-radius: 6px;
+  padding: 3px 7px; cursor: pointer; font-size: 13px;
+  color: var(--ink-3); transition: all .15s; flex-shrink: 0;
+}
+.flag-btn.on { background: var(--warn-l); border-color: var(--flag); color: var(--warn); }
+.flag-btn:hover { border-color: var(--flag); }
+
+.q-text { font-size: 14.5px; font-weight: 500; line-height: 1.55; margin-bottom: 14px; }
+
+/* ─── CHOICES ─────────────────────────────────────────────────────────────── */
+.choices { display: flex; flex-direction: column; gap: 7px; }
+.choice {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 9px 13px; border-radius: 8px;
+  border: 1.5px solid var(--border); background: white;
+  cursor: pointer; text-align: left; font-size: 13.5px;
+  width: 100%; transition: all .14s; line-height: 1.4;
+}
+.choice:hover:not(:disabled) { border-color: var(--primary-b); background: var(--primary-l); }
+.choice.sel           { border-color: var(--primary); background: var(--primary-l); }
+.choice.sel .ch-ltr   { color: var(--primary); font-weight: 700; }
+.choice.ok-ch         { border-color: var(--ok); background: var(--ok-l); }
+.choice.ok-ch .ch-ltr { color: var(--ok); font-weight: 700; }
+.choice.err-ch        { border-color: var(--err); background: var(--err-l); }
+.choice.err-ch .ch-ltr{ color: var(--err); font-weight: 700; }
+.choice:disabled      { cursor: default; }
+.ch-ltr { font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 500; color: var(--ink-3); min-width: 20px; padding-top: 1px; }
+
+/* ─── TEXT INPUTS ─────────────────────────────────────────────────────────── */
+.txt-in {
+  width: 100%; padding: 9px 13px; border-radius: 8px;
+  border: 1.5px solid var(--border); font-size: 14px;
+  background: white; outline: none; transition: border-color .15s;
+  color: var(--ink);
+}
+.txt-in:focus            { border-color: var(--primary); }
+.txt-in.ok-in            { border-color: var(--ok); background: var(--ok-l); }
+.txt-in.err-in           { border-color: var(--err); background: var(--err-l); }
+.txt-in:disabled         { cursor: default; }
+
+.enum-wrap  { display: flex; flex-direction: column; gap: 7px; }
+.enum-row   { display: flex; align-items: center; gap: 8px; }
+.enum-num   { font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 600; color: var(--ink-3); width: 20px; text-align: right; }
+
+/* ─── REVIEW BOX ──────────────────────────────────────────────────────────── */
+.review-box {
+  margin-top: 13px; border-radius: 8px; padding: 13px;
+  background: var(--surface); border: 1px solid var(--border);
+}
+.res-label {
+  font-size: 12.5px; font-weight: 700; display: flex; align-items: center;
+  gap: 5px; margin-bottom: 9px; text-transform: uppercase; letter-spacing: .04em;
+}
+.res-label.ok-label   { color: var(--ok); }
+.res-label.err-label  { color: var(--err); }
+.res-label.part-label { color: var(--partial); }
+.correct-ans { font-size: 13px; margin-bottom: 9px; }
+.correct-ans strong { color: var(--ok); }
+.your-ans    { font-size: 13px; margin-bottom: 9px; }
+.your-ans strong { color: var(--err); }
+
+.exp-section { margin-top: 10px; }
+.exp-title   { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-3); margin-bottom: 7px; }
+.exp-row     { display: flex; gap: 8px; padding: 6px 8px; border-radius: 6px; font-size: 12.5px; margin-bottom: 4px; line-height: 1.45; }
+.exp-row.exp-ok { background: var(--ok-l); }
+.exp-ltr     { font-family: 'JetBrains Mono', monospace; font-weight: 600; font-size: 11px; min-width: 18px; color: var(--ink-3); padding-top: 1px; }
+.exp-row.exp-ok .exp-ltr { color: var(--ok); }
+
+/* ─── SUMMARY ─────────────────────────────────────────────────────────────── */
+#summary-area {}
+.summary-card {
+  background: var(--card); border-radius: var(--r-lg); padding: 22px;
+  margin-bottom: 20px; box-shadow: var(--sh-lg);
+}
+.summary-card h2 { font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 800; margin-bottom: 16px; }
+.score-row  { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; margin-bottom: 6px; }
+.score-big  { font-family: 'Syne', sans-serif; font-size: 52px; font-weight: 800; color: var(--primary); line-height: 1; }
+.score-denom{ font-size: 18px; color: var(--ink-3); }
+.score-pct  { font-size: 22px; font-weight: 700; color: var(--ink-2); }
+.pass-badge { display: inline-block; padding: 4px 13px; border-radius: 99px; font-size: 12px; font-weight: 700; letter-spacing: .04em; margin-bottom: 14px; }
+.pass-badge.pass { background: var(--ok-l); color: var(--ok); }
+.pass-badge.fail { background: var(--err-l); color: var(--err); }
+.stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 10px; margin-bottom: 16px; }
+.stat-box   { background: var(--surface); border-radius: 8px; padding: 11px; text-align: center; border: 1px solid var(--border); }
+.stat-v     { font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 700; color: var(--primary); }
+.stat-l     { font-size: 10.5px; font-weight: 600; color: var(--ink-3); text-transform: uppercase; letter-spacing: .05em; margin-top: 2px; }
+.breakdown  { border-top: 1px solid var(--border); padding-top: 14px; }
+.breakdown h3 { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-3); margin-bottom: 10px; }
+.bd-row     { display: flex; justify-content: space-between; align-items: center; padding: 7px 10px; border-radius: 6px; margin-bottom: 5px; background: var(--surface); font-size: 13px; }
+.bd-score   { font-family: 'JetBrains Mono', monospace; font-weight: 600; color: var(--primary); }
+
+/* ─── FOOTER ──────────────────────────────────────────────────────────────── */
+#site-footer {
+  background: var(--ink);
+  color: #6b7280;
+  text-align: center;
+  padding: 20px 24px;
+  font-size: 12px;
+  margin-top: 40px;
+  line-height: 1.8;
+}
+#site-footer strong { color: #e5e7eb; }
+#site-footer a { color: #818cf8; text-decoration: none; }
+#site-footer a:hover { color: #a5b4fc; text-decoration: underline; }
+
+/* ─── UTILITIES ───────────────────────────────────────────────────────────── */
+.hidden { display: none !important; }
+
+@media (max-width: 768px) {
+  #exam-body { flex-direction: column-reverse; }
+  #sidebar { width: 100%; }
+  #navigator { position: static; }
+  .score-big { font-size: 38px; }
+}
+</style>
+</head>
+<body>
+
+<!-- CREDIT BAR -->
+<div id="credit-bar">
+  <div class="left">
+    <span><strong>Kim Cedrick C. Villar</strong></span>
+    <span><strong>Course:</strong> BSIT / DASTRUC</span>
+    <span><strong>Section:</strong> IT-252</span>
+    <span><strong>School:</strong> National University – Fairview</span>
+    <span><strong>Date:</strong> <span id="top-date"></span></span>
+  </div>
+  <a href="https://github.com/Ceddrickx" target="_blank" rel="noopener" aria-label="GitHub: Ceddrickx">⌥ github.com/Ceddrickx</a>
+</div>
+
+<!-- HEADER -->
+<div id="exam-header">
+  <h1>DASTRUC – Week 4 Mock Exam: Sorting Algorithms</h1>
+  <p>20 Multiple Choice &nbsp;·&nbsp; 10 True/False &nbsp;·&nbsp; 3 Enumeration &nbsp;·&nbsp; 10 Identification &nbsp;·&nbsp; 5 Acronym Meaning</p>
+</div>
+
+<!-- TIMER BAR -->
+<div id="timer-bar" role="status" aria-live="polite">
+  <span id="timer-display" class="timer">20:00</span>
+  <div class="progress-track" aria-label="Progress">
+    <div class="progress-fill" id="progress-fill"></div>
+  </div>
+  <span id="answered-label">0 / 48 answered</span>
+</div>
+
+<!-- MAIN BODY -->
+<div id="exam-body">
+  <div id="questions-col">
+    <!-- Controls -->
+    <div class="ctrl-row" id="top-controls">
+      <button class="btn btn-primary" id="submit-btn" onclick="submitExam()" aria-label="Submit exam">Submit Exam</button>
+      <button class="btn btn-ok hidden" id="retake-btn" onclick="retakeExam()" aria-label="Retake exam">↺ Retake Exam</button>
+      <button class="btn btn-ghost" onclick="resetFlags()" aria-label="Reset all flags">Clear Flags</button>
+    </div>
+    <!-- Filters -->
+    <div class="filter-row" id="filter-row">
+      <button class="f-btn active" data-filter="all" onclick="setFilter('all')" aria-label="Show all questions">All</button>
+      <button class="f-btn" data-filter="flagged" onclick="setFilter('flagged')" aria-label="Show flagged">🚩 Flagged</button>
+      <button class="f-btn hidden" data-filter="correct" id="f-correct" onclick="setFilter('correct')" aria-label="Show correct">✓ Correct</button>
+      <button class="f-btn hidden" data-filter="incorrect" id="f-incorrect" onclick="setFilter('incorrect')" aria-label="Show incorrect">✗ Incorrect</button>
+    </div>
+    <!-- Summary (inserted after submit) -->
+    <div id="summary-area"></div>
+    <!-- Questions -->
+    <div id="questions-container"></div>
+  </div>
+
+  <!-- SIDEBAR NAVIGATOR -->
+  <div id="sidebar">
+    <div id="navigator">
+      <h3>Question Navigator</h3>
+      <div id="nav-grid"></div>
+    </div>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer id="site-footer">
+  <div><strong>Kim Cedrick C. Villar</strong> &nbsp;·&nbsp; BSIT / DASTRUC &nbsp;·&nbsp; Section IT-252</div>
+  <div>National University – Fairview &nbsp;·&nbsp; <span id="footer-date"></span></div>
+  <div><a href="https://github.com/Ceddrickx" target="_blank" rel="noopener" aria-label="Visit GitHub">github.com/Ceddrickx</a></div>
+</footer>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════════════════
+   QUESTION BANK  (never mutated after definition)
+   ═══════════════════════════════════════════════════════════════════════════ */
+const questionBank = [
+
+  /* ── MULTIPLE CHOICE (20) ─────────────────────────────────────────────── */
+  {
+    id:1, type:'mc',
+    question:'What is sorting, as defined in the reviewer?',
+    slideRef:'§1.1 – Sorting Definition',
+    difficulty:'easy',
+    origChoices:[
+      'Arranging items so each item and its successor satisfy a prescribed relationship',
+      'Searching for a specific element in a collection',
+      'Deleting duplicate values from a list',
+      'Counting elements in a data structure'
+    ],
+    correctAnswer:'Arranging items so each item and its successor satisfy a prescribed relationship',
+    origWhy:[
+      'Correct. The reviewer defines sorting as the process of arranging items such that each item and its successor satisfy a prescribed relationship.',
+      'Incorrect. Searching is a separate operation from sorting.',
+      'Incorrect. Removing duplicates is not the definition of sorting.',
+      'Incorrect. Counting elements is unrelated to sorting.'
+    ],
+    altAnswers:[],choices:[],why:[]
+  },
+  {
+    id:2, type:'mc',
+    question:'According to the reviewer, what is a sort key?',
+    slideRef:'§1.2 – Sort Key',
+    difficulty:'easy',
+    origChoices:[
+      'A function used to reverse the order of a list',
+      'The value used for ordering',
+      'The algorithm chosen for sorting',
+      'The position of an element after sorting'
+    ],
+    correctAnswer:'The value used for ordering',
+    origWhy:[
+      'Incorrect. A sort key is not a reversal function.',
+      'Correct. The reviewer defines the sort key as the value used for ordering.',
+      'Incorrect. The sort key is not the algorithm; it is the comparison value.',
+      'Incorrect. The final position is the result of sorting, not the sort key.'
+    ],
+    altAnswers:[],choices:[],why:[]
+  },
+  {
+    id:3, type:'mc',
+    question:'Which real-world examples does the reviewer mention as being organized alphabetically?',
+    slideRef:'§1.2 – Sort Key',
+    difficulty:'easy',
+    origChoices:[
+      'Spreadsheets, databases, and file systems',
+      'Phone book listings, dictionary definitions, and index terms',
+      'Social media feeds, news articles, and search results',
+      'Receipts, invoices, and purchase orders'
+    ],
+    correctAnswer:'Phone book listings, dictionary definitions, and index terms',
+    origWhy:[
+      'Incorrect. Spreadsheets and databases are not the examples cited in the reviewer.',
+      'Correct. The reviewer specifically names phone book listings, dictionary definitions, and index terms as real-world alphabetical examples.',
+      'Incorrect. Social media and search results are not mentioned in the reviewer.',
+      'Incorrect. Financial documents are not the examples cited.'
+    ],
+    altAnswers:[],choices:[],why:[]
+  },
+  {
+    id:4, type:'mc',
+    question:'How does Bubble Sort rearrange values, according to the reviewer?',
+    slideRef:'§2.1 – Bubble Sort Definition',
+    difficulty:'easy',
+    origChoices:[
+      'By recursively dividing the list and merging sorted sublists',
+      'By finding the minimum element and placing it at the beginning',
+      'By iterating over the list multiple times, causing larger values to bubble to the top or end',
+      'By inserting each element into its correct position one at a time'
+    ],
+    correctAnswer:'By iterating over the list multiple times, causing larger values to bubble to the top or end',
+    origWhy:[
+      'Incorrect. Recursive divide-and-merge describes Merge Sort.',
+      'Incorrect. Finding the minimum and placing it at the beginning describes Selection Sort.',
+      'Correct. The reviewer states Bubble Sort rearranges values by iterating over the list multiple times, causing larger values to bubble to the top or end.',
+      'Incorrect. Inserting elements one at a time describes Insertion Sort.'
+    ],
+    altAnswers:[],choices:[],why:[]
+  },
+  {
+    id:5, type:'mc',
+    question:'In the Bubble Sort Python implementation from the reviewer, what is the range expression used in the inner loop?',
+    slideRef:'§2.2 – Bubble Sort Python Implementation',
+    difficulty:'medium',
+    origChoices:['range(n)','range(n - 1)','range(n - 1 - i)','range(i + 1, n)'],
+    correctAnswer:'range(n - 1 - i)',
+    origWhy:[
+      'Incorrect. range(n) iterates too many times and would go out of bounds on comparison.',
+      'Incorrect. range(n - 1) does not account for the elements already placed at the end.',
+      'Correct. The reviewer\'s bubbleSort implementation uses range(n - 1 - i) in the inner loop, shrinking the range as larger elements are placed.',
+      'Incorrect. range(i + 1, n) is the inner loop pattern used in Selection Sort.'
+    ],
+    altAnswers:[],choices:[],why:[]
+  },
+  {
+    id:6, type:'mc',
+    question:'What does Selection Sort do to sort an array?',
+    slideRef:'§3.1 – Selection Sort Definition',
+    difficulty:'easy',
+    origChoices:[
+      'Repeatedly finds the minimum element from the unsorted part and places it at the beginning',
+      'Iterates over the list multiple times, swapping adjacent elements',
+      'Recursively divides the list and merges the sorted halves',
+      'Builds the sorted array by inserting each element in its correct position'
+    ],
+    correctAnswer:'Repeatedly finds the minimum element from the unsorted part and places it at the beginning',
+    origWhy:[
+      'Correct. The reviewer defines Selection Sort as repeatedly finding the minimum element from the unsorted part and placing it at the beginning.',
+      'Incorrect. Swapping adjacent elements describes Bubble Sort.',
+      'Incorrect. Divide-and-merge describes Merge Sort.',
+      'Incorrect. Inserting elements one by one describes Insertion Sort.'
+    ],
+    altAnswers:[],choices:[],why:[]
+  },
+  {
+    id:7, type:'mc',
+    question:'In the Selection Sort Python implementation from the reviewer, what variable name tracks the index of the smallest element found?',
+    slideRef:'§3.2 – Selection Sort Python Implementation',
+    difficulty:'medium',
+    origChoices:['minIdx','smallIdx','sortIdx','lowIdx'],
+    correctAnswer:'smallIdx',
+    origWhy:[
+      'Incorrect. The reviewer\'s implementation uses smallIdx, not minIdx.',
+      'Correct. The reviewer\'s selectionSort code uses the variable smallIdx to track the index of the current smallest element in the unsorted portion.',
+      'Incorrect. sortIdx does not appear in the reviewer\'s implementation.',
+      'Incorrect. lowIdx is not used in the reviewer\'s implementation.'
+    ],
+    altAnswers:[],choices:[],why:[]
+  },
+  {
+    id:8, type:'mc',
+    question:'What type of algorithm is Merge Sort?',
+    slideRef:'§4.1 – Merge Sort Definition',
+    difficulty:'easy',
+    origChoices:['Greedy algorithm','Dynamic programming algorithm','Divide-and-conquer algorithm','Backtracking algorithm'],
+    correctAnswer:'Divide-and-conquer algorithm',
+    origWhy:[
+      'Incorrect. Merge Sort is not a greedy algorithm.',
+      'Incorrect. Merge Sort is not a dynamic programming algorithm.',
+      'Correct. The reviewer explicitly classifies Merge Sort as a divide-and-conquer algorithm.',
+      'Incorrect. Merge Sort is not a backtracking algorithm.'
+    ],
+    altAnswers:[],choices:[],why:[]
+  },
+  {
+    id:9, type:'mc',
+    question:'What is the base case condition in the Merge Sort Python implementation from the reviewer?',
+    slideRef:'§4.2 – Merge Sort Python Implementation',
+    difficulty:'medium',
+    origChoices:['len(lst) == 0','len(lst) <= 1','len(lst) == 1','lst is None'],
+    correctAnswer:'len(lst) <= 1',
+    origWhy:[
+      'Incorrect. The reviewer\'s base case checks <= 1, not exactly 0.',
+      'Correct. The reviewer\'s mergeSort uses if len(lst) <= 1: return lst as the base case, handling both empty and single-element lists.',
+      'Incorrect. The check uses <=, not ==, so it also handles empty lists.',
+      'Incorrect. None-checking is not the base case in the reviewer\'s implementation.'
+    ],
+    altAnswers:[],choices:[],why:[]
+  },
+  {
+    id:10, type:'mc',
+    question:'How does Insertion Sort build the final sorted array, according to the reviewer?',
+    slideRef:'§5.1 – Insertion Sort Definition',
+    difficulty:'easy',
+    origChoices:[
+      'By repeatedly finding the minimum and swapping it to the front',
+      'By dividing the list in half and recursively sorting each part',
+      'One element at a time, comparing each element to the one before it',
+      'By selecting a pivot and partitioning around it'
+    ],
+    correctAnswer:'One element at a time, comparing each element to the one before it',
+    origWhy:[
+      'Incorrect. Finding and swapping the minimum describes Selection Sort.',
+      'Incorrect. Dividing in half and recursively sorting describes Merge Sort.',
+      'Correct. The reviewer states Insertion Sort builds the final sorted array one element at a time by comparing each element to the one before it.',
+      'Incorrect. Using a pivot describes Quick Sort.'
+    ],
+    altAnswers:[],choices:[],why:[]
+  },
+  {
+    id:11, type:'mc',
+    question:'In the Insertion Sort Python implementation from the reviewer, what does the variable `key` hold?',
+    slideRef:'§5.2 – Insertion Sort Python Implementation',
+    difficulty:'medium',
+    origChoices:[
+      'The index of the smallest element found so far',
+      'The current element being positioned into the sorted portion',
+      'The last element in the sorted portion',
+      'The pivot value used for partitioning'
+    ],
+    correctAnswer:'The current element being positioned into the sorted portion',
+    origWhy:[
+      'Incorrect. Tracking the smallest element index is Selection Sort\'s approach.',
+      'Correct. In the reviewer\'s insertionSort, key = lst[i] holds the current element being inserted into its correct position in the sorted portion.',
+      'Incorrect. key is not the last element of the sorted portion.',
+      'Incorrect. Pivots are used in Quick Sort, not Insertion Sort.'
+    ],
+    altAnswers:[],choices:[],why:[]
+  },
+  {
+    id:12, type:'mc',
+    question:'Which sorting algorithm works by selecting a pivot element and partitioning the list around it?',
+    slideRef:'§6 – Other Sorting Algorithms',
+    difficulty:'easy',
+    origChoices:['Merge Sort','Heap Sort','Quick Sort','Radix Sort'],
+    correctAnswer:'Quick Sort',
+    origWhy:[
+      'Incorrect. Merge Sort divides at the midpoint and merges; it does not use a pivot.',
+      'Incorrect. Heap Sort uses a binary heap, not a pivot element.',
+      'Correct. The reviewer describes Quick Sort as working by selecting a pivot element and partitioning the list around it.',
+      'Incorrect. Radix Sort works based on individual digits or characters.'
+    ],
+    altAnswers:[],choices:[],why:[]
+  },
+  {
+    id:13, type:'mc',
+    question:'Which sorting algorithm works by creating a binary heap and repeatedly extracting the maximum element?',
+    slideRef:'§6 – Other Sorting Algorithms',
+    difficulty:'easy',
+    origChoices:['Quick Sort','Heap Sort','Radix Sort','Insertion Sort'],
+    correctAnswer:'Heap Sort',
+    origWhy:[
+      'Incorrect. Quick Sort uses a pivot, not a binary heap.',
+      'Correct. The reviewer states Heap Sort works by creating a binary heap and repeatedly extracting the maximum element.',
+      'Incorrect. Radix Sort sorts on individual digits or characters.',
+      'Incorrect. Insertion Sort builds the sorted array one element at a time.'
+    ],
+    altAnswers:[],choices:[],why:[]
+  },
+  {
+    id:14, type:'mc',
+    question:'According to the reviewer, how does Radix Sort work?',
+    slideRef:'§6 – Other Sorting Algorithms',
+    difficulty:'easy',
+    origChoices:[
+      'By repeatedly partitioning around a pivot element',
+      'By creating a binary heap and extracting the maximum',
+      'By sorting elements based on their individual digits or characters',
+      'By dividing the list in half and merging sorted sublists'
+    ],
+    correctAnswer:'By sorting elements based on their individual digits or characters',
+    origWhy:[
+      'Incorrect. Partitioning around a pivot describes Quick Sort.',
+      'Incorrect. Binary heap extraction describes Heap Sort.',
+      'Correct. The reviewer states Radix Sort works by sorting elements based on their individual digits or characters.',
+      'Incorrect. Dividing and merging describes Merge Sort.'
+    ],
+    altAnswers:[],choices:[],why:[]
+  },
+  {
+    id:15, type:'mc',
+    question:'What does the Python `.sort()` method return?',
+    slideRef:'§7.1 – Using .sort()',
+    difficulty:'easy',
+    origChoices:['A new sorted list','A sorted tuple','None','The original unsorted list'],
+    correctAnswer:'None',
+    origWhy:[
+      'Incorrect. .sort() does not return a new list; that is what sorted() does.',
+      'Incorrect. .sort() does not return a tuple.',
+      'Correct. The reviewer states .sort() sorts the list in-place and returns None.',
+      'Incorrect. .sort() does not return the original unsorted list.'
+    ],
+    altAnswers:[],choices:[],why:[]
+  },
+  {
+    id:16, type:'mc',
+    question:'What does the Python `sorted()` function return?',
+    slideRef:'§7.2 – Using sorted()',
+    difficulty:'easy',
+    origChoices:[
+      'None',
+      'A new sorted list without modifying the original iterable',
+      'The sorted original list (in-place)',
+      'A sorted tuple regardless of input type'
+    ],
+    correctAnswer:'A new sorted list without modifying the original iterable',
+    origWhy:[
+      'Incorrect. sorted() returns a new list, not None. .sort() is what returns None.',
+      'Correct. The reviewer states sorted() returns a new sorted list without modifying the original iterable.',
+      'Incorrect. sorted() does not sort in-place; it creates a new list.',
+      'Incorrect. sorted() always returns a list, not a tuple.'
+    ],
+    altAnswers:[],choices:[],why:[]
+  },
+  {
+    id:17, type:'mc',
+    question:'What does setting `reverse=True` do when using `.sort()` or `sorted()`?',
+    slideRef:'§7.1 – §7.2 (Using .sort() and sorted())',
+    difficulty:'easy',
+    origChoices:[
+      'Sorts in ascending order (smallest to largest)',
+      'Sorts in descending order (largest to smallest)',
+      'Randomizes the order of elements',
+      'Removes the largest element before sorting'
+    ],
+    correctAnswer:'Sorts in descending order (largest to smallest)',
+    origWhy:[
+      'Incorrect. Ascending order is the default when reverse=False.',
+      'Correct. Both the .sort() and sorted() sections state that reverse=True results in descending order.',
+      'Incorrect. reverse=True sorts in reverse order, not randomly.',
+      'Incorrect. reverse=True has no element-removal behavior.'
+    ],
+    altAnswers:[],choices:[],why:[]
+  },
+  {
+    id:18, type:'mc',
+    question:'What is the purpose of the `key` parameter in `sorted()`?',
+    slideRef:'§7.2 – Using sorted()',
+    difficulty:'medium',
+    origChoices:[
+      'To specify the starting index for the sort',
+      'A function that takes an element and returns a value used for sorting',
+      'To set whether the sort runs ascending or descending',
+      'To limit the number of elements that get sorted'
+    ],
+    correctAnswer:'A function that takes an element and returns a value used for sorting',
+    origWhy:[
+      'Incorrect. The key parameter is not about a start index.',
+      'Correct. The reviewer defines key as an optional function that takes an element and returns a value used for sorting.',
+      'Incorrect. Setting sort direction is the purpose of the reverse parameter, not key.',
+      'Incorrect. key does not limit the count of elements sorted.'
+    ],
+    altAnswers:[],choices:[],why:[]
+  },
+  {
+    id:19, type:'mc',
+    question:'In the Merge Sort Python implementation from the reviewer, at which index is the list split into left and right halves?',
+    slideRef:'§4.2 – Merge Sort Python Implementation',
+    difficulty:'medium',
+    origChoices:['len(lst) - 1','len(lst) // 2','len(lst) / 2','len(lst) + 1'],
+    correctAnswer:'len(lst) // 2',
+    origWhy:[
+      'Incorrect. len(lst) - 1 is the last valid index, not the midpoint.',
+      'Correct. The reviewer\'s mergeSort code uses mid = len(lst) // 2 (integer/floor division) to find the split index.',
+      'Incorrect. len(lst) / 2 uses float division in Python 3, which would raise a TypeError as a slice index.',
+      'Incorrect. len(lst) + 1 would be out of bounds.'
+    ],
+    altAnswers:[],choices:[],why:[]
+  },
+  {
+    id:20, type:'mc',
+    question:'When sorting complex types such as student records, what serves as the sort key according to the reviewer?',
+    slideRef:'§1.2 – Sort Key',
+    difficulty:'medium',
+    origChoices:[
+      'Always the first field of the record',
+      'A specific component or combination of components of the item',
+      'The total byte size of the record',
+      'A unique ID auto-assigned by the system'
+    ],
+    correctAnswer:'A specific component or combination of components of the item',
+    origWhy:[
+      'Incorrect. The sort key is not necessarily the first field.',
+      'Correct. The reviewer states that for complex types, the sort key is a specific component or combination of components.',
+      'Incorrect. Byte size is not mentioned as a sort key concept.',
+      'Incorrect. Auto-assigned IDs are not part of the sort key definition in the reviewer.'
+    ],
+    altAnswers:[],choices:[],why:[]
+  },
+
+  /* ── TRUE OR FALSE (10) ───────────────────────────────────────────────── */
+  {
+    id:21, type:'tf',
+    question:'Bubble Sort rearranges values by causing larger values to bubble to the top or end of the list.',
+    slideRef:'§2.1 – Bubble Sort Definition',
+    difficulty:'easy',
+    origChoices:['True','False'],
+    correctAnswer:'True',
+    origWhy:[
+      'Correct. The reviewer explicitly states that Bubble Sort causes larger values to bubble to the top or end of the list.',
+      'Incorrect. This is precisely the behavior described for Bubble Sort in the reviewer.'
+    ],
+    altAnswers:[],choices:[],why:[]
+  },
+  {
+    id:22, type:'tf',
+    question:'The Python `.sort()` method returns a new sorted list.',
+    slideRef:'§7.1 – Using .sort()',
+    difficulty:'easy',
+    origChoices:['True','False'],
+    correctAnswer:'False',
+    origWhy:[
+      'Incorrect. .sort() sorts in-place and returns None, not a new list.',
+      'Correct. The reviewer states .sort() returns None. It is sorted() that returns a new list.'
+    ],
+    altAnswers:[],choices:[],why:[]
+  },
+  {
+    id:23, type:'tf',
+    question:'`sorted()` modifies the original iterable when called.',
+    slideRef:'§7.2 – Using sorted()',
+    difficulty:'easy',
+    origChoices:['True','False'],
+    correctAnswer:'False',
+    origWhy:[
+      'Incorrect. sorted() returns a new sorted list and does not modify the original iterable.',
+      'Correct. The reviewer states sorted() returns a new sorted list without modifying the original iterable.'
+    ],
+    altAnswers:[],choices:[],why:[]
+  },
+  {
+    id:24, type:'tf',
+    question:'Selection Sort works by repeatedly finding the minimum element from the unsorted part of the array.',
+    slideRef:'§3.1 – Selection Sort Definition',
+    difficulty:'easy',
+    origChoices:['True','False'],
+    correctAnswer:'True',
+    origWhy:[
+      'Correct. This is exactly how the reviewer defines Selection Sort.',
+      'Incorrect. The reviewer confirms Selection Sort repeatedly finds the minimum element from the unsorted part.'
+    ],
+    altAnswers:[],choices:[],why:[]
+  },
+  {
+    id:25, type:'tf',
+    question:'Merge Sort is classified as a divide-and-conquer algorithm.',
+    slideRef:'§4.1 – Merge Sort Definition',
+    difficulty:'easy',
+    origChoices:['True','False'],
+    correctAnswer:'True',
+    origWhy:[
+      'Correct. The reviewer explicitly classifies Merge Sort as a divide-and-conquer algorithm.',
+      'Incorrect. The reviewer confirms Merge Sort is a divide-and-conquer algorithm.'
+    ],
+    altAnswers:[],choices:[],why:[]
+  },
+  {
+    id:26, type:'tf',
+    question:'Insertion Sort builds the final sorted array one element at a time.',
+    slideRef:'§5.1 – Insertion Sort Definition',
+    difficulty:'easy',
+    origChoices:['True','False'],
+    correctAnswer:'True',
+    origWhy:[
+      'Correct. The reviewer describes Insertion Sort as an algorithm that builds the final sorted array one element at a time.',
+      'Incorrect. The reviewer confirms this is how Insertion Sort operates.'
+    ],
+    altAnswers:[],choices:[],why:[]
+  },
+  {
+    id:27, type:'tf',
+    question:'Quick Sort uses a pivot element to partition the list.',
+    slideRef:'§6 – Other Sorting Algorithms',
+    difficulty:'easy',
+    origChoices:['True','False'],
+    correctAnswer:'True',
+    origWhy:[
+      'Correct. The reviewer states Quick Sort works by selecting a pivot element and partitioning the list around it.',
+      'Incorrect. The reviewer confirms Quick Sort uses a pivot element.'
+    ],
+    altAnswers:[],choices:[],why:[]
+  },
+  {
+    id:28, type:'tf',
+    question:'Heap Sort uses a linked list as its primary data structure.',
+    slideRef:'§6 – Other Sorting Algorithms',
+    difficulty:'easy',
+    origChoices:['True','False'],
+    correctAnswer:'False',
+    origWhy:[
+      'Incorrect. Heap Sort uses a binary heap, not a linked list.',
+      'Correct. The reviewer states Heap Sort works by creating a binary heap, not a linked list.'
+    ],
+    altAnswers:[],choices:[],why:[]
+  },
+  {
+    id:29, type:'tf',
+    question:'The `key` parameter in `sorted()` is optional.',
+    slideRef:'§7.2 – Using sorted()',
+    difficulty:'easy',
+    origChoices:['True','False'],
+    correctAnswer:'True',
+    origWhy:[
+      'Correct. The reviewer explicitly labels the key parameter as "Optional" in the description of sorted().',
+      'Incorrect. The reviewer marks key as optional; if not specified, elements are compared directly.'
+    ],
+    altAnswers:[],choices:[],why:[]
+  },
+  {
+    id:30, type:'tf',
+    question:'Radix Sort sorts elements based on their individual digits or characters.',
+    slideRef:'§6 – Other Sorting Algorithms',
+    difficulty:'easy',
+    origChoices:['True','False'],
+    correctAnswer:'True',
+    origWhy:[
+      'Correct. The reviewer states Radix Sort works by sorting elements based on their individual digits or characters.',
+      'Incorrect. The reviewer confirms this is how Radix Sort operates.'
+    ],
+    altAnswers:[],choices:[],why:[]
+  },
+
+  /* ── ENUMERATION (3) ──────────────────────────────────────────────────── */
+  {
+    id:31, type:'enum',
+    question:'Name the three sorting algorithms listed under Section 6 "Other Sorting Algorithms" in the reviewer. (Order does not matter; one per box.)',
+    slideRef:'§6 – Other Sorting Algorithms',
+    difficulty:'easy',
+    origChoices:[],
+    correctAnswer:['Quick Sort','Heap Sort','Radix Sort'],
+    origWhy:['The reviewer lists Quick Sort, Heap Sort, and Radix Sort under Section 6 "Other Sorting Algorithms."'],
+    altAnswers:['quicksort','heapsort','radixsort','quick sort','heap sort','radix sort','quick','heap','radix'],
+    choices:[],why:[]
+  },
+  {
+    id:32, type:'enum',
+    question:'Name the four main sorting algorithms that are each covered in their own dedicated section (Sections 2 through 5) in the reviewer. (Order does not matter; one per box.)',
+    slideRef:'§2–5 (Main Sorting Algorithms)',
+    difficulty:'easy',
+    origChoices:[],
+    correctAnswer:['Bubble Sort','Selection Sort','Merge Sort','Insertion Sort'],
+    origWhy:['Sections 2 through 5 each cover one algorithm in detail: Bubble Sort (§2), Selection Sort (§3), Merge Sort (§4), and Insertion Sort (§5).'],
+    altAnswers:['bubblesort','selectionsort','mergesort','insertionsort','bubble sort','selection sort','merge sort','insertion sort','bubble','selection','merge','insertion'],
+    choices:[],why:[]
+  },
+  {
+    id:33, type:'enum',
+    question:'Name the two optional parameters that both `.sort()` and `sorted()` share, as described in Sections 7.1 and 7.2. (One per box.)',
+    slideRef:'§7.1–7.2 – Using .sort() and sorted()',
+    difficulty:'medium',
+    origChoices:[],
+    correctAnswer:['key','reverse'],
+    origWhy:['Both .sort() and sorted() share two optional parameters: key (a sorting function) and reverse (a boolean for sort direction), as detailed in Sections 7.1 and 7.2.'],
+    altAnswers:[],
+    choices:[],why:[]
+  },
+
+  /* ── IDENTIFICATION (10) ──────────────────────────────────────────────── */
+  {
+    id:34, type:'id',
+    question:'This sorting algorithm rearranges values by iterating over the list multiple times, causing larger values to bubble to the end.',
+    slideRef:'§2.1 – Bubble Sort Definition',
+    difficulty:'easy',
+    origChoices:[],
+    correctAnswer:'Bubble Sort',
+    origWhy:['Bubble Sort (§2.1) is defined as the algorithm that causes larger values to bubble to the top or end through repeated iterations.'],
+    altAnswers:['bubblesort','bubble sort'],
+    choices:[],why:[]
+  },
+  {
+    id:35, type:'id',
+    question:'This sorting algorithm repeatedly finds the minimum element from the unsorted part of the array and places it at the beginning.',
+    slideRef:'§3.1 – Selection Sort Definition',
+    difficulty:'easy',
+    origChoices:[],
+    correctAnswer:'Selection Sort',
+    origWhy:['Selection Sort (§3.1) works by repeatedly finding the minimum element from the unsorted part and placing it at the beginning.'],
+    altAnswers:['selectionsort','selection sort'],
+    choices:[],why:[]
+  },
+  {
+    id:36, type:'id',
+    question:'This divide-and-conquer sorting algorithm recursively divides the list into smaller sublists, sorts them, and merges them back together.',
+    slideRef:'§4.1 – Merge Sort Definition',
+    difficulty:'easy',
+    origChoices:[],
+    correctAnswer:'Merge Sort',
+    origWhy:['Merge Sort (§4.1) is explicitly described as a divide-and-conquer algorithm that recursively divides, sorts, and merges sublists.'],
+    altAnswers:['mergesort','merge sort'],
+    choices:[],why:[]
+  },
+  {
+    id:37, type:'id',
+    question:'This sorting algorithm builds the final sorted array one element at a time by comparing each element to the one before it and swapping if they are not in the correct order.',
+    slideRef:'§5.1 – Insertion Sort Definition',
+    difficulty:'easy',
+    origChoices:[],
+    correctAnswer:'Insertion Sort',
+    origWhy:['Insertion Sort (§5.1) builds the sorted array one element at a time, comparing each element to the one before it and swapping if needed.'],
+    altAnswers:['insertionsort','insertion sort'],
+    choices:[],why:[]
+  },
+  {
+    id:38, type:'id',
+    question:'This sorting algorithm works by selecting a pivot element, partitioning the list around the pivot, and then recursively sorting the two sub-lists.',
+    slideRef:'§6 – Other Sorting Algorithms',
+    difficulty:'easy',
+    origChoices:[],
+    correctAnswer:'Quick Sort',
+    origWhy:['Quick Sort (§6) is described as working by selecting a pivot, partitioning around it, and recursively sorting the resulting sub-lists.'],
+    altAnswers:['quicksort','quick sort'],
+    choices:[],why:[]
+  },
+  {
+    id:39, type:'id',
+    question:'This sorting algorithm creates a binary heap from the list and then repeatedly extracts the maximum element and adds it to the sorted portion.',
+    slideRef:'§6 – Other Sorting Algorithms',
+    difficulty:'easy',
+    origChoices:[],
+    correctAnswer:'Heap Sort',
+    origWhy:['Heap Sort (§6) works by creating a binary heap and repeatedly extracting the maximum element into the sorted portion.'],
+    altAnswers:['heapsort','heap sort'],
+    choices:[],why:[]
+  },
+  {
+    id:40, type:'id',
+    question:'This sorting algorithm sorts elements based on their individual digits or characters.',
+    slideRef:'§6 – Other Sorting Algorithms',
+    difficulty:'easy',
+    origChoices:[],
+    correctAnswer:'Radix Sort',
+    origWhy:['Radix Sort (§6) sorts elements based on their individual digits or characters.'],
+    altAnswers:['radixsort','radix sort'],
+    choices:[],why:[]
+  },
+  {
+    id:41, type:'id',
+    question:'This Python method sorts a list in-place and returns None.',
+    slideRef:'§7.1 – Using .sort()',
+    difficulty:'easy',
+    origChoices:[],
+    correctAnswer:'.sort()',
+    origWhy:['The reviewer (§7.1) describes .sort() as sorting the list in-place and returning None.'],
+    altAnswers:['sort','sort()','list.sort','.sort'],
+    choices:[],why:[]
+  },
+  {
+    id:42, type:'id',
+    question:'This Python function returns a new sorted list without modifying the original iterable.',
+    slideRef:'§7.2 – Using sorted()',
+    difficulty:'easy',
+    origChoices:[],
+    correctAnswer:'sorted()',
+    origWhy:['The reviewer (§7.2) states sorted() returns a new sorted list without modifying the original iterable.'],
+    altAnswers:['sorted'],
+    choices:[],why:[]
+  },
+  {
+    id:43, type:'id',
+    question:'This is the term used in the reviewer for the value that ordering is based on during a sort operation.',
+    slideRef:'§1.2 – Sort Key',
+    difficulty:'easy',
+    origChoices:[],
+    correctAnswer:'Sort Key',
+    origWhy:['Section 1.2 defines the Sort Key as the value used for ordering in a sort operation.'],
+    altAnswers:['sort key','sortkey','key'],
+    choices:[],why:[]
+  },
+
+  /* ── ACRONYM MEANING (5) ──────────────────────────────────────────────── */
+  {
+    id:44, type:'acronym',
+    question:'What does DASTRUC stand for, as used in the reviewer\'s course header?',
+    slideRef:'Reviewer Header',
+    difficulty:'easy',
+    origChoices:[],
+    correctAnswer:'Data Structures',
+    origWhy:['DASTRUC is the abbreviated course code for Data Structures, as shown in the reviewer\'s header.'],
+    altAnswers:['data structures','data structure'],
+    choices:[],why:[]
+  },
+  {
+    id:45, type:'acronym',
+    question:'What does BSIT stand for, as shown in the reviewer\'s course header?',
+    slideRef:'Reviewer Header',
+    difficulty:'easy',
+    origChoices:[],
+    correctAnswer:'Bachelor of Science in Information Technology',
+    origWhy:['BSIT stands for Bachelor of Science in Information Technology, as shown in the reviewer\'s header.'],
+    altAnswers:['bs information technology','bs in information technology','bachelor of science information technology'],
+    choices:[],why:[]
+  },
+  {
+    id:46, type:'acronym',
+    question:'In the reviewer\'s Bubble Sort Python implementation, what does the variable `tmp` stand for?',
+    slideRef:'§2.2 – Bubble Sort Python Implementation',
+    difficulty:'easy',
+    origChoices:[],
+    correctAnswer:'temporary',
+    origWhy:['In the reviewer\'s bubbleSort code, tmp is a contraction of "temporary," used as a holder variable during element swapping.'],
+    altAnswers:['temp','temporary variable','temp variable'],
+    choices:[],why:[]
+  },
+  {
+    id:47, type:'acronym',
+    question:'In the reviewer\'s Selection Sort Python implementation, what does `smallIdx` stand for?',
+    slideRef:'§3.2 – Selection Sort Python Implementation',
+    difficulty:'easy',
+    origChoices:[],
+    correctAnswer:'small index',
+    origWhy:['smallIdx in the reviewer\'s selectionSort is a contraction of "small index," referring to the index position of the smallest element found in the unsorted portion.'],
+    altAnswers:['smallest index','small idx','smallest idx','smaller index'],
+    choices:[],why:[]
+  },
+  {
+    id:48, type:'acronym',
+    question:'In the reviewer\'s Merge Sort Python implementation, what does the variable `mid` stand for?',
+    slideRef:'§4.2 – Merge Sort Python Implementation',
+    difficulty:'easy',
+    origChoices:[],
+    correctAnswer:'middle',
+    origWhy:['mid in the reviewer\'s mergeSort refers to the middle index used to split the list into left and right halves.'],
+    altAnswers:['midpoint','middle index','middle point','midpoint index'],
+    choices:[],why:[]
+  }
+];
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   STATE
+   ═══════════════════════════════════════════════════════════════════════════ */
+const examState = {
+  answers: {},
+  flagged: {},
+  currentStreak: 0,
+  longestStreak: 0,
+  submitted: false,
+  startTime: null,
+  remainingTime: null,
+  questions: []
+};
+
+let timerInterval = null;
+let activeFilter = 'all';
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   UTILITIES
+   ═══════════════════════════════════════════════════════════════════════════ */
+function shuffleArr(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function norm(str) {
+  if (str === null || str === undefined) return '';
+  return String(str).toLowerCase().trim().replace(/\s+/g, ' ').replace(/[^\w\s]/g, '').trim();
+}
+
+const LETTERS = 'ABCDEFGH';
+const TYPE_LABELS = { mc:'Multiple Choice', tf:'True / False', enum:'Enumeration', id:'Identification', acronym:'Acronym Meaning' };
+const TYPE_ICONS  = { mc:'①', tf:'T/F', enum:'≡', id:'?', acronym:'ABC' };
+const CHIP_CLASS  = { mc:'chip-mc', tf:'chip-tf', enum:'chip-enum', id:'chip-id', acronym:'chip-acronym' };
+
+function isAnswered(q) {
+  const a = examState.answers[q.id];
+  if (q.type === 'enum') return Array.isArray(a) && a.some(v => v && v.trim());
+  if (q.type === 'mc' || q.type === 'tf') return typeof a === 'number';
+  return a !== undefined && a !== null && String(a).trim() !== '';
+}
+
+function scoreEnum(q, userAnswers) {
+  const allAccepted = new Set([
+    ...q.correctAnswer.map(norm),
+    ...q.altAnswers.map(norm)
+  ]);
+  const scored = new Set();
+  const seen   = new Set();
+  for (const ua of userAnswers) {
+    const nu = norm(ua);
+    if (!nu || seen.has(nu)) continue;
+    seen.add(nu);
+    if (allAccepted.has(nu)) scored.add(nu);
+  }
+  return Math.min(scored.size, q.correctAnswer.length);
+}
+
+function isCorrect(q) {
+  const a = examState.answers[q.id];
+  if (q.type === 'mc' || q.type === 'tf') {
+    return typeof a === 'number' && a === q.correctShuffledIndex;
+  }
+  if (q.type === 'enum') {
+    const ua = Array.isArray(a) ? a : [];
+    return scoreEnum(q, ua) === q.correctAnswer.length;
+  }
+  const nu = norm(typeof a === 'string' ? a : '');
+  if (!nu) return false;
+  return nu === norm(q.correctAnswer) || q.altAnswers.some(alt => norm(alt) === nu);
+}
+
+function calcScore() {
+  let points = 0;
+  examState.questions.forEach(q => {
+    if (q.type === 'enum') {
+      const ua = Array.isArray(examState.answers[q.id]) ? examState.answers[q.id] : [];
+      points += scoreEnum(q, ua) / q.correctAnswer.length;
+    } else {
+      if (isCorrect(q)) points += 1;
+    }
+  });
+  return points;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   initExam  — ONLY place shuffling happens
+   ═══════════════════════════════════════════════════════════════════════════ */
+function initExam() {
+  // Reset state
+  examState.answers    = {};
+  examState.flagged    = {};
+  examState.currentStreak  = 0;
+  examState.longestStreak  = 0;
+  examState.submitted  = false;
+  examState.startTime  = Date.now();
+  examState.remainingTime  = 20 * 60;
+
+  // Group questions by type (preserve bank order within each group before shuffle)
+  const typeOrder = ['mc','tf','enum','id','acronym'];
+  const groups = {};
+  typeOrder.forEach(t => { groups[t] = []; });
+  questionBank.forEach(q => { if (groups[q.type]) groups[q.type].push(q); });
+
+  // Shuffle within each group and set up choice mappings
+  const shuffled = [];
+  typeOrder.forEach(t => {
+    shuffleArr(groups[t]).forEach(q => {
+      const clone = JSON.parse(JSON.stringify(q));
+      if (clone.type === 'mc' || clone.type === 'tf') {
+        const n = clone.origChoices.length;
+        const idx = shuffleArr([...Array(n).keys()]);
+        clone.shuffledChoices = idx.map(i => clone.origChoices[i]);
+        const origCorrectIdx = clone.origChoices.indexOf(clone.correctAnswer);
+        clone.correctShuffledIndex = idx.indexOf(origCorrectIdx);
+      }
+      shuffled.push(clone);
+    });
+  });
+
+  examState.questions = shuffled;
+
+  // Reset UI
+  activeFilter = 'all';
+  document.querySelectorAll('.f-btn').forEach(b => b.classList.toggle('active', b.dataset.filter === 'all'));
+  document.getElementById('f-correct').classList.add('hidden');
+  document.getElementById('f-incorrect').classList.add('hidden');
+  document.getElementById('submit-btn').classList.remove('hidden');
+  document.getElementById('retake-btn').classList.add('hidden');
+  document.getElementById('summary-area').innerHTML = '';
+
+  renderQuestions();
+  updateProgress();
+  updateNavigator();
+  startTimer();
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   renderQuestions  — renders all cards from examState.questions
+   ═══════════════════════════════════════════════════════════════════════════ */
+function renderQuestions() {
+  const container = document.getElementById('questions-container');
+  let html = '';
+  let lastType = null;
+
+  examState.questions.forEach((q, idx) => {
+    if (q.type !== lastType) {
+      html += `<div class="type-header">${TYPE_LABELS[q.type]}</div>`;
+      lastType = q.type;
+    }
+    html += buildCard(q, idx + 1);
+  });
+
+  container.innerHTML = html;
+  applyFilter();
+}
+
+function buildCard(q, num) {
+  const chipType = CHIP_CLASS[q.type];
+  const chipDiff = 'chip-' + q.difficulty;
+  const isFlagged = !!examState.flagged[q.id];
+
+  let inputHtml = '';
+
+  if (q.type === 'mc' || q.type === 'tf') {
+    const userAns = examState.answers[q.id] ?? null;
+    inputHtml = `<div class="choices" id="choices-${q.id}">`;
+    q.shuffledChoices.forEach((ch, i) => {
+      const isSel = userAns === i;
+      inputHtml += `<button class="choice${isSel ? ' sel' : ''}"
+        onclick="handleAnswer(${q.id}, ${i})"
+        aria-label="Choice ${LETTERS[i]}: ${esc(ch)}"
+        ${examState.submitted ? 'disabled' : ''}>
+        <span class="ch-ltr">${LETTERS[i]}.</span><span>${esc(ch)}</span>
+      </button>`;
+    });
+    inputHtml += `</div>`;
+
+  } else if (q.type === 'enum') {
+    const ua = Array.isArray(examState.answers[q.id]) ? examState.answers[q.id] : [];
+    inputHtml = `<div class="enum-wrap" id="enum-${q.id}">`;
+    q.correctAnswer.forEach((_, i) => {
+      const val = (ua[i] || '').replace(/"/g, '&quot;');
+      inputHtml += `<div class="enum-row">
+        <span class="enum-num">${i + 1}.</span>
+        <input type="text" class="txt-in" id="enum-${q.id}-${i}"
+          value="${val}" placeholder="Answer ${i + 1}"
+          oninput="handleEnumInput(${q.id})"
+          aria-label="Enumeration answer ${i + 1}, question ${num}"
+          ${examState.submitted ? 'disabled' : ''} />
+      </div>`;
+    });
+    inputHtml += `</div>`;
+
+  } else {
+    const val = (examState.answers[q.id] || '').replace(/"/g, '&quot;');
+    inputHtml = `<input type="text" class="txt-in" id="input-${q.id}"
+      value="${val}" placeholder="Your answer"
+      oninput="handleTextInput(${q.id})"
+      aria-label="Answer for question ${num}"
+      ${examState.submitted ? 'disabled' : ''} />`;
+  }
+
+  return `<div class="q-card${isFlagged ? ' flagged-card' : ''}" id="card-${q.id}" data-qtype="${q.type}">
+    <div class="q-top">
+      <div class="q-chips">
+        <span class="chip chip-num">Q${num}</span>
+        <span class="chip ${chipType}">${TYPE_LABELS[q.type]}</span>
+        <span class="chip chip-ref">📌 ${esc(q.slideRef)}</span>
+        <span class="chip ${chipDiff}">${q.difficulty}</span>
+      </div>
+      <button class="flag-btn${isFlagged ? ' on' : ''}"
+        onclick="toggleFlag(${q.id})"
+        aria-label="${isFlagged ? 'Unflag' : 'Flag'} question ${num}">🚩</button>
+    </div>
+    <p class="q-text">${num}. ${esc(q.question)}</p>
+    ${inputHtml}
+    <div id="review-${q.id}"></div>
+  </div>`;
+}
+
+function esc(s) {
+  return String(s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   handleAnswer  — stores user input; never shuffles
+   ═══════════════════════════════════════════════════════════════════════════ */
+function handleAnswer(qId, shuffledIndex) {
+  if (examState.submitted) return;
+  examState.answers[qId] = shuffledIndex;
+  const wrap = document.getElementById(`choices-${qId}`);
+  if (wrap) {
+    wrap.querySelectorAll('.choice').forEach((btn, i) => {
+      btn.classList.toggle('sel', i === shuffledIndex);
+    });
+  }
+  updateProgress();
+  updateNavigator();
+}
+
+function handleTextInput(qId) {
+  if (examState.submitted) return;
+  const el = document.getElementById(`input-${qId}`);
+  if (el) { examState.answers[qId] = el.value; updateProgress(); updateNavigator(); }
+}
+
+function handleEnumInput(qId) {
+  if (examState.submitted) return;
+  const q = examState.questions.find(x => x.id === qId);
+  if (!q) return;
+  examState.answers[qId] = q.correctAnswer.map((_, i) => {
+    const el = document.getElementById(`enum-${qId}-${i}`);
+    return el ? el.value : '';
+  });
+  updateProgress();
+  updateNavigator();
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   submitExam
+   ═══════════════════════════════════════════════════════════════════════════ */
+function submitExam() {
+  if (examState.submitted) return;
+  examState.submitted = true;
+
+  clearInterval(timerInterval);
+  timerInterval = null;
+
+  // Compute streaks
+  let cur = 0, best = 0;
+  examState.questions.forEach(q => {
+    if (isCorrect(q)) { cur++; if (cur > best) best = cur; }
+    else cur = 0;
+  });
+  examState.currentStreak = cur;
+  examState.longestStreak = best;
+
+  // Show/hide buttons and filters
+  document.getElementById('submit-btn').classList.add('hidden');
+  document.getElementById('retake-btn').classList.remove('hidden');
+  document.getElementById('f-correct').classList.remove('hidden');
+  document.getElementById('f-incorrect').classList.remove('hidden');
+
+  renderResults();
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   renderResults  — updates cards IN PLACE, never reshuffles
+   ═══════════════════════════════════════════════════════════════════════════ */
+function renderResults() {
+  renderSummary();
+
+  examState.questions.forEach(q => {
+    const card = document.getElementById(`card-${q.id}`);
+    if (!card) return;
+
+    const correct = isCorrect(q);
+    let isPartial = false;
+    if (q.type === 'enum') {
+      const ua = Array.isArray(examState.answers[q.id]) ? examState.answers[q.id] : [];
+      const sc = scoreEnum(q, ua);
+      isPartial = sc > 0 && sc < q.correctAnswer.length;
+    }
+
+    card.classList.remove('flagged-card');
+    if (isPartial) card.classList.add('partial-card');
+    else if (correct) card.classList.add('correct-card');
+    else card.classList.add('incorrect-card');
+
+    // Disable all inputs
+    card.querySelectorAll('button.choice').forEach(btn => btn.disabled = true);
+    card.querySelectorAll('input.txt-in').forEach(inp => inp.disabled = true);
+
+    // Style MC/TF choices
+    if (q.type === 'mc' || q.type === 'tf') {
+      const userAns = examState.answers[q.id];
+      card.querySelectorAll('.choice').forEach((btn, i) => {
+        btn.classList.remove('sel');
+        if (i === q.correctShuffledIndex) {
+          btn.classList.add('ok-ch');
+        } else if (typeof userAns === 'number' && i === userAns) {
+          btn.classList.add('err-ch');
+        }
+      });
+    }
+
+    // Style text inputs
+    if (q.type === 'id' || q.type === 'acronym') {
+      const inp = document.getElementById(`input-${q.id}`);
+      if (inp) inp.classList.add(correct ? 'ok-in' : 'err-in');
+    }
+
+    if (q.type === 'enum') {
+      const allAccepted = new Set([
+        ...q.correctAnswer.map(norm),
+        ...q.altAnswers.map(norm)
+      ]);
+      q.correctAnswer.forEach((_, i) => {
+        const inp = document.getElementById(`enum-${q.id}-${i}`);
+        if (!inp) return;
+        const nu = norm(inp.value);
+        if (nu && allAccepted.has(nu)) inp.classList.add('ok-in');
+        else if (nu) inp.classList.add('err-in');
+      });
+    }
+
+    // Inject review section
+    const rev = document.getElementById(`review-${q.id}`);
+    if (rev) rev.innerHTML = buildReview(q);
+  });
+
+  updateNavigator();
+  applyFilter();
+}
+
+function buildReview(q) {
+  const correct = isCorrect(q);
+  const ua = examState.answers[q.id];
+
+  let label, labelClass, correctAnsHtml, yourAnsHtml = '';
+
+  if (q.type === 'mc' || q.type === 'tf') {
+    label = correct ? '✓ Correct' : '✗ Incorrect';
+    labelClass = correct ? 'ok-label' : 'err-label';
+    correctAnsHtml = `<div class="correct-ans">Correct answer: <strong>${esc(q.shuffledChoices[q.correctShuffledIndex])}</strong></div>`;
+    if (!correct && typeof ua === 'number') {
+      yourAnsHtml = `<div class="your-ans">Your answer: <strong>${esc(q.shuffledChoices[ua])}</strong></div>`;
+    }
+  } else if (q.type === 'enum') {
+    const userArr = Array.isArray(ua) ? ua : [];
+    const sc = scoreEnum(q, userArr);
+    const tot = q.correctAnswer.length;
+    const isPartial = sc > 0 && sc < tot;
+    label = sc === tot ? `✓ Correct (${sc}/${tot})` : (isPartial ? `◑ Partial (${sc}/${tot})` : `✗ Incorrect (${sc}/${tot})`);
+    labelClass = sc === tot ? 'ok-label' : (isPartial ? 'part-label' : 'err-label');
+    correctAnsHtml = `<div class="correct-ans">Expected: <strong>${q.correctAnswer.map(esc).join(', ')}</strong></div>`;
+  } else {
+    label = correct ? '✓ Correct' : '✗ Incorrect';
+    labelClass = correct ? 'ok-label' : 'err-label';
+    correctAnsHtml = `<div class="correct-ans">Correct answer: <strong>${esc(q.correctAnswer)}</strong></div>`;
+    if (!correct && ua && String(ua).trim()) {
+      yourAnsHtml = `<div class="your-ans">Your answer: <strong>${esc(ua)}</strong></div>`;
+    }
+  }
+
+  let expHtml = '';
+  if (q.type === 'mc' || q.type === 'tf') {
+    const origCorrIdx = q.origChoices.indexOf(q.correctAnswer);
+    expHtml = `<div class="exp-section">
+      <div class="exp-title">Explanation (original answer order)</div>
+      ${q.origChoices.map((ch, i) => {
+        const isC = i === origCorrIdx;
+        return `<div class="exp-row${isC ? ' exp-ok' : ''}">
+          <span class="exp-ltr">${LETTERS[i]}.</span>
+          <div><strong>${esc(ch)}</strong> — ${esc(q.origWhy[i])}</div>
+        </div>`;
+      }).join('')}
+    </div>`;
+  } else {
+    expHtml = `<div class="exp-section">
+      <div class="exp-title">Explanation</div>
+      <div class="exp-row exp-ok">
+        <div>${esc(q.origWhy[0])}</div>
+      </div>
+    </div>`;
+  }
+
+  return `<div class="review-box">
+    <div class="res-label ${labelClass}">${label}</div>
+    ${correctAnsHtml}${yourAnsHtml}
+    ${expHtml}
+  </div>`;
+}
+
+/* ─── Summary ─────────────────────────────────────────────────────────────── */
+function renderSummary() {
+  const total   = examState.questions.length;
+  const points  = calcScore();
+  const pct     = (points / total) * 100;
+  const passed  = pct >= 75;
+
+  let answered = 0, skipped = 0;
+  examState.questions.forEach(q => { if (isAnswered(q)) answered++; else skipped++; });
+
+  // Per-type breakdown
+  const breakdownTypes = ['mc','tf','enum','id','acronym'];
+  const bd = {};
+  breakdownTypes.forEach(t => { bd[t] = { pts: 0, total: 0 }; });
+  examState.questions.forEach(q => {
+    const t = q.type;
+    if (!bd[t]) return;
+    bd[t].total++;
+    if (q.type === 'enum') {
+      const ua = Array.isArray(examState.answers[q.id]) ? examState.answers[q.id] : [];
+      bd[t].pts += scoreEnum(q, ua) / q.correctAnswer.length;
+    } else {
+      if (isCorrect(q)) bd[t].pts++;
+    }
+  });
+
+  const bdRows = breakdownTypes.map(t => {
+    const { pts, total: tot } = bd[t];
+    const disp = t === 'enum' ? pts.toFixed(1) + ' / ' + tot : Math.round(pts) + ' / ' + tot;
+    return `<div class="bd-row"><span>${TYPE_LABELS[t]}</span><span class="bd-score">${disp}</span></div>`;
+  }).join('');
+
+  document.getElementById('summary-area').innerHTML = `
+    <div class="summary-card">
+      <h2>Exam Results</h2>
+      <div class="score-row">
+        <span class="score-big">${points.toFixed(1)}</span>
+        <span class="score-denom">/ ${total}</span>
+        <span class="score-pct">&nbsp;${pct.toFixed(1)}%</span>
+      </div>
+      <div class="pass-badge ${passed ? 'pass' : 'fail'}">${passed ? '✓ PASSED' : '✗ FAILED'} (passing: 75%)</div>
+      <div class="stats-grid">
+        <div class="stat-box"><div class="stat-v">${answered}</div><div class="stat-l">Answered</div></div>
+        <div class="stat-box"><div class="stat-v">${skipped}</div><div class="stat-l">Skipped</div></div>
+        <div class="stat-box"><div class="stat-v">${examState.longestStreak}</div><div class="stat-l">Best Streak</div></div>
+        <div class="stat-box"><div class="stat-v">${pct.toFixed(0)}%</div><div class="stat-l">Score %</div></div>
+      </div>
+      <div class="breakdown">
+        <h3>Per-Section Breakdown</h3>
+        ${bdRows}
+      </div>
+    </div>`;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   TIMER
+   ═══════════════════════════════════════════════════════════════════════════ */
+function startTimer() {
+  clearInterval(timerInterval);
+  timerInterval = null;
+
+  const el = document.getElementById('timer-display');
+  timerInterval = setInterval(() => {
+    if (examState.submitted) { clearInterval(timerInterval); timerInterval = null; return; }
+    examState.remainingTime--;
+    const m = Math.floor(examState.remainingTime / 60);
+    const s = examState.remainingTime % 60;
+    el.textContent = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+    el.className = '';
+    if (examState.remainingTime <= 300) el.classList.add('danger');
+    else if (examState.remainingTime <= (20 * 60 * 0.25)) el.classList.add('warn');
+    if (examState.remainingTime <= 0) {
+      clearInterval(timerInterval);
+      timerInterval = null;
+      submitExam();
+    }
+  }, 1000);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   PROGRESS & NAVIGATOR
+   ═══════════════════════════════════════════════════════════════════════════ */
+function updateProgress() {
+  const total    = examState.questions.length;
+  const answered = examState.questions.filter(isAnswered).length;
+  const pct      = total ? (answered / total * 100) : 0;
+  document.getElementById('progress-fill').style.width = pct + '%';
+  document.getElementById('answered-label').textContent = `${answered} / ${total} answered`;
+}
+
+function updateNavigator() {
+  const grid = document.getElementById('nav-grid');
+  let html = '';
+  examState.questions.forEach((q, idx) => {
+    const num = idx + 1;
+    let cls = 'nav-btn';
+    if (examState.submitted) {
+      cls += isCorrect(q) ? ' nav-correct' : ' nav-incorrect';
+    } else {
+      if (examState.flagged[q.id]) cls += ' nav-flagged';
+      else if (isAnswered(q)) cls += ' answered';
+    }
+    html += `<button class="${cls}" onclick="navTo(${q.id})" aria-label="Go to question ${num}">${num}</button>`;
+  });
+  grid.innerHTML = html;
+}
+
+function navTo(qId) {
+  const card = document.getElementById(`card-${qId}`);
+  if (!card) return;
+  if (card.classList.contains('hidden') || card.style.display === 'none') {
+    setFilter('all');
+  }
+  setTimeout(() => {
+    document.getElementById(`card-${qId}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, 50);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   FILTERS
+   ═══════════════════════════════════════════════════════════════════════════ */
+function setFilter(f) {
+  activeFilter = f;
+  document.querySelectorAll('.f-btn').forEach(b => b.classList.toggle('active', b.dataset.filter === f));
+  applyFilter();
+}
+
+function applyFilter() {
+  const container = document.getElementById('questions-container');
+  // Also handle type group headers visibility
+  const typeHeaders = container.querySelectorAll('.type-header');
+  const cards = container.querySelectorAll('.q-card');
+
+  cards.forEach(card => {
+    const qId = parseInt(card.id.replace('card-',''), 10);
+    const q = examState.questions.find(x => x.id === qId);
+    if (!q) return;
+    let show = true;
+    if (activeFilter === 'flagged')   show = !!examState.flagged[q.id];
+    if (activeFilter === 'correct')   show = examState.submitted && isCorrect(q);
+    if (activeFilter === 'incorrect') show = examState.submitted && !isCorrect(q);
+    card.style.display = show ? '' : 'none';
+  });
+
+  // Hide type-header if all following cards (until next header) are hidden
+  const allChildren = Array.from(container.children);
+  let currentHeader = null;
+  let anyVisible = false;
+  allChildren.forEach((el, idx) => {
+    if (el.classList.contains('type-header')) {
+      if (currentHeader) currentHeader.style.display = anyVisible ? '' : 'none';
+      currentHeader = el;
+      anyVisible = false;
+    } else if (el.classList.contains('q-card') && el.style.display !== 'none') {
+      anyVisible = true;
+    }
+  });
+  if (currentHeader) currentHeader.style.display = anyVisible ? '' : 'none';
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   FLAGS
+   ═══════════════════════════════════════════════════════════════════════════ */
+function toggleFlag(qId) {
+  examState.flagged[qId] = !examState.flagged[qId];
+  const card = document.getElementById(`card-${qId}`);
+  const btn  = card?.querySelector('.flag-btn');
+  if (!examState.submitted) {
+    card?.classList.toggle('flagged-card', !!examState.flagged[qId]);
+  }
+  if (btn) {
+    btn.classList.toggle('on', !!examState.flagged[qId]);
+    const q = examState.questions.findIndex(x => x.id === qId);
+    btn.setAttribute('aria-label', `${examState.flagged[qId] ? 'Unflag' : 'Flag'} question ${q + 1}`);
+  }
+  updateNavigator();
+}
+
+function resetFlags() {
+  examState.flagged = {};
+  document.querySelectorAll('.q-card').forEach(card => card.classList.remove('flagged-card'));
+  document.querySelectorAll('.flag-btn').forEach(btn => btn.classList.remove('on'));
+  updateNavigator();
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   RETAKE
+   ═══════════════════════════════════════════════════════════════════════════ */
+function retakeExam() {
+  initExam();
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   DATE & BOOT
+   ═══════════════════════════════════════════════════════════════════════════ */
+(function setDates() {
+  const d = new Date();
+  const str = d.toLocaleDateString('en-PH', { year:'numeric', month:'long', day:'numeric' });
+  document.getElementById('top-date').textContent = str;
+  document.getElementById('footer-date').textContent = str;
+})();
+
+// Boot
+initExam();
+</script>
+</body>
+</html>
